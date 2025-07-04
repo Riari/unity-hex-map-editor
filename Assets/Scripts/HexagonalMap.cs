@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class HexagonalGrid : MonoBehaviour
+public class HexagonalMap : MonoBehaviour
 {
     private struct Cube
     {
