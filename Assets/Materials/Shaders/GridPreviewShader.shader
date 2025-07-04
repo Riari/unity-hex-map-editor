@@ -58,7 +58,6 @@ Shader "Unlit/GridPreviewShader"
                 return o;
             }
 
-            // Convert axial coordinates to world position
             float2 axialToWorld(float2 axial)
             {
                 float x = _CellSize * (3.0/2.0 * axial.x);
@@ -66,7 +65,6 @@ Shader "Unlit/GridPreviewShader"
                 return float2(x, y);
             }
 
-            // Convert world position to axial coordinates
             float2 worldToAxial(float2 worldPos)
             {
                 float q = (2.0/3.0 * worldPos.x) / _CellSize;
@@ -74,7 +72,6 @@ Shader "Unlit/GridPreviewShader"
                 return float2(q, r);
             }
 
-            // Round axial coordinates to nearest hex
             float2 roundAxial(float2 axial)
             {
                 float q = axial.x;
@@ -97,7 +94,6 @@ Shader "Unlit/GridPreviewShader"
                 return float2(rq, rr);
             }
 
-            // Proper hexagon SDF (Signed Distance Field)
             float hexSDF(float2 p, float radius)
             {
                 // Convert to first quadrant
@@ -124,55 +120,38 @@ Shader "Unlit/GridPreviewShader"
                 return abs(q) <= _GridSize && abs(r) <= _GridSize && abs(s) <= _GridSize;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            fixed4 frag(v2f i) : SV_Target
             {
-                // Center UV coordinates
                 float2 uv = (i.uv - 0.5) * 2.0;
                 
-                // Convert to axial coordinates
                 float2 axial = worldToAxial(uv);
                 float2 roundedAxial = roundAxial(axial);
                 
-                // Check if we're within the hexagonal grid
-                if (!isInGrid(roundedAxial))
-                {
-                    discard;
-                }
+                if (!isInGrid(roundedAxial)) discard;
                 
-                // Get the world position of the current hex center
                 float2 hexCenter = axialToWorld(roundedAxial);
                 
-                // Calculate signed distance to hexagon edge
                 float2 localPos = uv - hexCenter;
                 float dist = hexSDF(localPos, _CellSize);
                 
-                // Make border width absolute (not relative to cell size)
                 float absoluteBorderWidth = _BorderWidth * _CellSize;
-                
-                // Determine if we're in the border area
                 bool isBorder = dist > -absoluteBorderWidth;
-                
-                // Determine cell color based on state
                 fixed4 cellColor = _CellColor;
                 
-                // Check if this is the hovered cell
                 if (roundedAxial.x == _HoveredCell.x && roundedAxial.y == _HoveredCell.y && 
                     _HoveredCell.z == 0)
                 {
                     cellColor = _HoveredColor;
                 }
                 
-                // Check if this is the selected cell (overrides hover)
                 if (roundedAxial.x == _SelectedCell.x && roundedAxial.y == _SelectedCell.y && 
                     _SelectedCell.z == 0)
                 {
                     cellColor = _SelectedColor;
                 }
                 
-                // Return border or cell color
                 fixed4 finalColor = isBorder ? _BorderColor : cellColor;
                 
-                // Apply fog
                 UNITY_APPLY_FOG(i.fogCoord, finalColor);
                 return finalColor;
             }
