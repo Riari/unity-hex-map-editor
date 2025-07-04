@@ -19,7 +19,7 @@ namespace Editor.Windows
     
         private HexagonalMapEditor _selectedMapEditor;
         private Vector2 _scrollPosition;
-        private readonly List<PrefabEntry> _prefabEntries = new List<PrefabEntry>();
+        private List<PrefabEntry> _prefabEntries = new List<PrefabEntry>();
         private readonly Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>();
         private string _filterLabel = "MapObject";
         private PrefabEntry _selectedPrefab;
@@ -37,7 +37,6 @@ namespace Editor.Windows
     
         private void OnEnable()
         {
-            // Subscribe to selection changes
             Selection.selectionChanged += OnSelectionChanged;
             SceneView.duringSceneGui += OnSceneGUI;
             RefreshPrefabList();
@@ -111,7 +110,7 @@ namespace Editor.Windows
             if (_selectedMapEditor.SelectedCell.HasValue)
             {
                 var coord = _selectedMapEditor.SelectedCell.Value;
-                EditorGUILayout.LabelField($"Selected Cell: ({coord.x}, {coord.y})");
+                EditorGUILayout.LabelField($"Selected Cell: ({coord.Q}, {coord.R})");
             
                 var currentContent = _selectedMapEditor.GetCellContent(coord);
                 var contentName = currentContent?.RuntimeKeyIsValid() == true ? "Assigned" : "Empty";
