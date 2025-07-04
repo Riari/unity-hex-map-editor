@@ -7,7 +7,7 @@ namespace Editor
     [CustomEditor(typeof(HexagonalMap))]
     public class HexagonalMapEditor : UnityEditor.Editor
     {
-        public HexagonalMap.Hex? SelectedCell; 
+        public Hex? SelectedCell;
         
         void OnSceneGUI()
         {
@@ -17,7 +17,7 @@ namespace Editor
             if (currentEvent.type == EventType.MouseMove || currentEvent.type == EventType.MouseDown)
             {
                 Ray ray = HandleUtility.GUIPointToWorldRay(currentEvent.mousePosition);
-                HexagonalMap.Hex targetCell;
+                Hex targetCell;
 
                 if (!TryGetCellAtWorldPosition(ray, out targetCell)) return;
 
@@ -42,7 +42,7 @@ namespace Editor
             }
         }
 
-        public bool TryGetCellAtWorldPosition(Ray ray, out HexagonalMap.Hex outCell)
+        public bool TryGetCellAtWorldPosition(Ray ray, out Hex outCell)
         {
             HexagonalMap hexagonalMap = (HexagonalMap)target;
 
@@ -58,12 +58,12 @@ namespace Editor
             return false;
         }
 
-        public AssetReference GetCellContent(HexagonalMap.Hex cell)
+        public AssetReference GetCellContent(Hex cell)
         {
             return default;
         }
 
-        public void SetCellContent(HexagonalMap.Hex cell, AssetReference asset)
+        public void SetCellContent(Hex cell, AssetReference asset)
         {
             
         }

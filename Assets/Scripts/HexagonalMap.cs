@@ -1,45 +1,46 @@
 using System;
 using UnityEngine;
 
-public class HexagonalMap : MonoBehaviour
+[Serializable]
+public struct Hex : IEquatable<Hex>
 {
-    public struct Hex : IEquatable<Hex>
+
+    public float Q;
+    public float R;
+
+    public override string ToString()
     {
-
-        public float Q;
-        public float R;
-
-        public override string ToString()
-        {
-            return $"({Q}, {R})";
-        }
-
-        public static bool operator ==(Hex left, Hex right)
-        {
-            return left.Equals(right);
-        }
-
-        public static bool operator !=(Hex left, Hex right)
-        {
-            return !(left == right);
-        }
-
-        public bool Equals(Hex other)
-        {
-            return Q.Equals(other.Q) && R.Equals(other.R);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is Hex other && Equals(other);
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Q, R);
-        }
+        return $"({Q}, {R})";
     }
 
+    public static bool operator ==(Hex left, Hex right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Hex left, Hex right)
+    {
+        return !(left == right);
+    }
+
+    public bool Equals(Hex other)
+    {
+        return Q.Equals(other.Q) && R.Equals(other.R);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is Hex other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Q, R);
+    }
+}
+
+public class HexagonalMap : MonoBehaviour
+{
     [Header("Components")]
     [SerializeField] private Camera playerCamera;
 
