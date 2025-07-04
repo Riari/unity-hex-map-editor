@@ -1,3 +1,5 @@
+using Editor.Windows;
+using JetBrains.Annotations;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -7,34 +9,101 @@ namespace Editor
     [CustomEditor(typeof(HexagonalMap))]
     public class HexagonalMapEditor : UnityEditor.Editor
     {
-        public Hex? SelectedCell;
+        private HexagonalMap _hexMap;
+        private HexagonalMapEditorWindow _editorWindow;
         
-        void OnSceneGUI()
+        public HexCoordinates? SelectedCell;
+        
+        private void OnEnable()
         {
-            HexagonalMap hexagonalMap = (HexagonalMap)target;
+            _hexMap = target as HexagonalMap;
+            SceneView.duringSceneGui += OnSceneGUI;
+        }
+    
+        private void OnDisable()
+        {
+            SceneView.duringSceneGui -= OnSceneGUI;
+        }
+        
+        public override void OnInspectorGUI()
+        {
+            DrawDefaultInspector();
+        
+            EditorGUILayout.Space();
+        
+            if (GUILayout.Button("Open Hex Map Editor Window"))
+            {
+                HexagonalMapEditorWindow.ShowWindow();
+            }
+        
+            if (GUILayout.Button("Clear All Cells"))
+            {
+                if (EditorUtility.DisplayDialog("Clear All Cells", 
+                        "Are you sure you want to clear all cell content?", 
+                        "Yes", "Cancel"))
+                {
+                    _hexMap.ClearAllCells();
+                }
+            }
+        
+            EditorGUILayout.Space();
+        
+            if (SelectedCell.HasValue)
+            {
+                var coords = SelectedCell.Value;
+                EditorGUILayout.LabelField($"Selected Cell: ({coords.Q}, {coords.R})", EditorStyles.boldLabel);
+                EditorGUILayout.LabelField(TryGetCell(coords, out HexCell cell)
+                    ? $"Content: {cell.Name}"
+                    : "Content: Empty");
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Selected Cell: None", EditorStyles.boldLabel);
+                EditorGUILayout.HelpBox("Click on a hex cell in the Scene view to select it", MessageType.Info);
+            }
+        }
+        
+        private void OnSceneGUI(SceneView sceneView)
+        {
+            if (_hexMap == null) return;
+
+            HandleCellSelection();
+        }
+
+        public void SetEditorWindow(HexagonalMapEditorWindow window)
+        {
+            _editorWindow = window;
+        }
+
+        private void HandleCellSelection()
+        {
             Event currentEvent = Event.current;
 
             if (currentEvent.type == EventType.MouseMove || currentEvent.type == EventType.MouseDown)
             {
                 Ray ray = HandleUtility.GUIPointToWorldRay(currentEvent.mousePosition);
-                Hex targetCell;
+                HexCoordinates targetCell;
 
                 if (!TryGetCellAtWorldPosition(ray, out targetCell)) return;
 
                 switch (currentEvent.type)
                 {
                     case EventType.MouseMove:
-                        hexagonalMap.SetHoveredCell(targetCell);
+                        _hexMap.SetHoveredCell(targetCell);
                         break;
                     case EventType.MouseDown when currentEvent.button == 0:
                         if (SelectedCell.HasValue && SelectedCell.Value == targetCell)
                         {
-                            hexagonalMap.ClearSelectedCell();
+                            _hexMap.ClearSelectedCell();
+                            SelectedCell = null;
                         }
                         else
                         {
-                            hexagonalMap.SetSelectedCell(targetCell);
+                            _hexMap.SetSelectedCell(targetCell);
+                            SelectedCell = targetCell;
                         }
+
+                        _editorWindow.OnCellSelectionChanged();
                     
                         currentEvent.Use();
                         break;
@@ -42,7 +111,7 @@ namespace Editor
             }
         }
 
-        public bool TryGetCellAtWorldPosition(Ray ray, out Hex outCell)
+        public bool TryGetCellAtWorldPosition(Ray ray, out HexCoordinates outCell)
         {
             HexagonalMap hexagonalMap = (HexagonalMap)target;
 
@@ -58,14 +127,19 @@ namespace Editor
             return false;
         }
 
-        public AssetReference GetCellContent(Hex cell)
+        public bool TryGetCell(HexCoordinates coords, out HexCell cell)
         {
-            return default;
+            return _hexMap.TryGetCell(coords, out cell);
         }
 
-        public void SetCellContent(Hex cell, AssetReference asset)
+        public void SetCellContent(HexCoordinates cell, string displayName, AssetReference asset)
         {
-            
+            _hexMap.SetCellContent(cell, displayName, asset);
+        }
+
+        public void ClearCellContent(HexCoordinates cell)
+        {
+            _hexMap.ClearCell(cell);
         }
     }
 }

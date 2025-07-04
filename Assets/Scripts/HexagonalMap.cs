@@ -1,8 +1,11 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 [Serializable]
-public struct Hex : IEquatable<Hex>
+public struct HexCoordinates : IEquatable<HexCoordinates>
 {
 
     public float Q;
@@ -13,30 +16,41 @@ public struct Hex : IEquatable<Hex>
         return $"({Q}, {R})";
     }
 
-    public static bool operator ==(Hex left, Hex right)
+    public static bool operator ==(HexCoordinates left, HexCoordinates right)
     {
         return left.Equals(right);
     }
 
-    public static bool operator !=(Hex left, Hex right)
+    public static bool operator !=(HexCoordinates left, HexCoordinates right)
     {
         return !(left == right);
     }
 
-    public bool Equals(Hex other)
+    public bool Equals(HexCoordinates other)
     {
         return Q.Equals(other.Q) && R.Equals(other.R);
     }
 
     public override bool Equals(object obj)
     {
-        return obj is Hex other && Equals(other);
+        return obj is HexCoordinates other && Equals(other);
     }
 
     public override int GetHashCode()
     {
         return HashCode.Combine(Q, R);
     }
+}
+
+[Serializable]
+public class HexCell
+{
+    public string Name;
+    public AssetReference ContentAsset;
+    public GameObject InstantiatedContent;
+    public bool ShowPreview = true;
+    
+    public bool HasContent => ContentAsset != null && ContentAsset.RuntimeKeyIsValid();
 }
 
 public class HexagonalMap : MonoBehaviour
@@ -47,6 +61,11 @@ public class HexagonalMap : MonoBehaviour
     [Header("Grid Settings")]
     [SerializeField, Range(1, 20)] private int gridSize = 5;
     [SerializeField, Range(0.1f, 2.0f)] private float cellSize = 0.1f;
+    
+    [Header("Preview Settings")]
+    [SerializeField] private Color previewColor = new(1f, 1f, 1f, 0.5f);
+    
+    private Dictionary<HexCoordinates, HexCell> _cellStorage = new();
     
     private const float PlaneExtents = 5.0f;
 
@@ -102,7 +121,7 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetFloat(ShaderCellSize, cellSize);
     }
 
-    public void SetHoveredCell(Hex cellCoords)
+    public void SetHoveredCell(HexCoordinates cellCoords)
     {
         if (!GridMaterial) return;
         
@@ -116,7 +135,7 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderHoveredCell, new Vector4(0, 0, -1, -1));
     }
 
-    public void SetSelectedCell(Hex cellCoords)
+    public void SetSelectedCell(HexCoordinates cellCoords)
     {
         if (!GridMaterial) return;
         
@@ -130,21 +149,117 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderSelectedCell, new Vector4(0, 0, -1, -1));
     }
 
+    public void SetCellContent(HexCoordinates cellCoords, string displayName, AssetReference asset)
+    {
+        if (_cellStorage.TryGetValue(cellCoords, out HexCell existingCell))
+        {
+            if (existingCell.InstantiatedContent != null)
+            {
+                if (Application.isPlaying)
+                {
+                    if (existingCell.ContentAsset != null && existingCell.ContentAsset.RuntimeKeyIsValid())
+                    {
+                        Addressables.ReleaseInstance(existingCell.InstantiatedContent);
+                    }
+                    else
+                    {
+                        Destroy(existingCell.InstantiatedContent);
+                    }
+                }
+                else
+                {
+                    DestroyImmediate(existingCell.InstantiatedContent);
+                }
+            }
+        }
+
+        if (asset != null && asset.RuntimeKeyIsValid())
+        {
+            HexCell cell = new HexCell
+            {
+                Name = displayName,
+                ContentAsset = asset
+            };
+
+            var worldPos = HexToPoint(cellCoords);
+
+            if (Application.isPlaying)
+            {
+                StartCoroutine(InstantiateContentAsync(cell, worldPos));
+            }
+            else
+            {
+                // TODO: Implement cell content preview
+            }
+
+            _cellStorage[cellCoords] = cell;
+        }
+    }
+    
+    private IEnumerator InstantiateContentAsync(HexCell cell, Vector3 position)
+    {
+        var handle = cell.ContentAsset.InstantiateAsync(position, Quaternion.identity, transform);
+        yield return handle;
+        
+        if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+        {
+            cell.InstantiatedContent = handle.Result;
+        }
+    }
+
+    public bool TryGetCell(HexCoordinates cellCoords, out HexCell cell)
+    {
+        return _cellStorage.TryGetValue(cellCoords, out cell);
+    }
+
+    public void ClearCell(HexCoordinates coords)
+    {
+        ClearCell(_cellStorage[coords]);
+    }
+
+    public void ClearCell(HexCell cell)
+    {
+        if (cell.InstantiatedContent != null)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(cell.InstantiatedContent);
+            }
+            else
+            {
+                DestroyImmediate(cell.InstantiatedContent);
+            }
+        }
+            
+        cell.ContentAsset = null;
+        cell.InstantiatedContent = null;
+    }
+
+    public void ClearAllCells()
+    {
+        foreach (var (_, cell) in _cellStorage)
+        {
+            ClearCell(cell);
+        }
+        
+        _cellStorage.Clear();
+    }
+    
     void OnValidate()
     {
         UpdateShaderProperties();
     }
 
-    private Hex AxialRound(Hex hex)
+    private HexCoordinates AxialRound(HexCoordinates hexCoordinates)
     {
-        float xGrid = Mathf.Round(hex.Q);
-        float yGrid = Mathf.Round(hex.R);
-        float x = hex.Q - xGrid;
-        float y = hex.R - yGrid;
+        float xGrid = Mathf.Round(hexCoordinates.Q);
+        float yGrid = Mathf.Round(hexCoordinates.R);
+        float x = hexCoordinates.Q - xGrid;
+        float y = hexCoordinates.R - yGrid;
         float dx = Mathf.Round(x + 0.5f * y) * ((x * x >= y * y) ? 1.0f : 0.0f);
         float dy = Mathf.Round(y + 0.5f * x) * ((x * x < y * y) ? 1.0f : 0.0f);
 
-        Hex rounded;
+        HexCoordinates rounded;
         rounded.Q = xGrid + dx;
         rounded.R = yGrid + dy;
 
@@ -169,14 +284,29 @@ public class HexagonalMap : MonoBehaviour
         return result;
     }
 
-    public Hex PointToHex(Vector3 point)
+    public HexCoordinates PointToHex(Vector3 point)
     {
         Vector2 normalizedCoordinates = PointToNormalizedPlaneCoordinates(point);
 
-        Hex hex;
-        hex.Q = 2.0f / 3.0f * normalizedCoordinates.x;
-        hex.R = -1.0f / 3.0f * normalizedCoordinates.x + Mathf.Sqrt(3.0f) / 3.0f * normalizedCoordinates.y;
+        HexCoordinates hexCoordinates;
+        hexCoordinates.Q = 2.0f / 3.0f * normalizedCoordinates.x;
+        hexCoordinates.R = -1.0f / 3.0f * normalizedCoordinates.x + Mathf.Sqrt(3.0f) / 3.0f * normalizedCoordinates.y;
 
-        return AxialRound(hex);
+        return AxialRound(hexCoordinates);
+    }
+
+    public Vector3 HexToPoint(HexCoordinates hexCoordinates)
+    {
+        float x = 3.0f / 2.0f * hexCoordinates.Q;
+        float z = Mathf.Sqrt(3.0f) / 2.0f + Mathf.Sqrt(3.0f) * hexCoordinates.R;
+        x *= cellSize;
+        z *= cellSize;
+
+        Vector3 point;
+        point.x = x;
+        point.y = transform.position.y;
+        point.z = z;
+
+        return point;
     }
 }

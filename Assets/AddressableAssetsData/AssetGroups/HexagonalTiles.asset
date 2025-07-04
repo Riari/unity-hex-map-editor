@@ -16,82 +16,82 @@ MonoBehaviour:
   m_GUID: eea907683efb55f44bf3820b72fec513
   m_SerializeEntries:
   - m_GUID: 06ab8209b2327f44cac32d3bfd57b4f8
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Village.glb
+    m_Address: Hexagon_Village
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 181bce8b77f7a0e4ca3c05b6d03022ad
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Grass.glb
+    m_Address: Hexagon_Grass
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 297cc27b106e75149aca2c2e79149650
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Vulcano.glb
+    m_Address: Hexagon_Vulcano
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2c8f8bb02fb75fe4787ef5f58276c659
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Farm.glb
+    m_Address: Hexagon_Farm
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 2dcd5e282ea0ad0418e9aa3adc00dcf6
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_SkyScraper.glb
+    m_Address: Hexagon_SkyScraper
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 37d1c2fdd81a0ce4e80f9dec3eabb094
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Forrest.glb
+    m_Address: Hexagon_Forrest
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 3ca8378debe44ab4fb2bc30093432a49
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_River.glb
+    m_Address: Hexagon_River
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 405905b36a635c342a2fcaa915dbf36a
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Misty.glb
+    m_Address: Hexagon_Misty
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 8152ef8f170e6004c9aee7cc99894377
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Mountain.glb
+    m_Address: Hexagon_Mountain
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 85c7ad22b6c860342afd42cff042ad5a
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Sand.glb
+    m_Address: Hexagon_Sand
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 9fe9933265b991742a724a44fcd47623
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_City.glb
+    m_Address: Hexagon_City
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: a83912cdd62c25a49a4d6ba78409c526
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Ice.glb
+    m_Address: Hexagon_Ice
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c011abae4cd50b746a7f7ba567d8a195
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Crater.glb
+    m_Address: Hexagon_Crater
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c477ce22819239e4f8a603b533e6fd76
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_Beach.glb
+    m_Address: Hexagon_Beach
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: c71e8071d7a41fa408791c237828b3dc
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_water.glb
+    m_Address: Hexagon_water
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: ee3be815f4ae1dd46a529ab66e936105
-    m_Address: Assets/Models/GBL_Hexagon_TileSet/Hexagon_island.glb
+    m_Address: Hexagon_island
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
