@@ -550,6 +550,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 11400000, guid: ad9c2a9657c75f64da8551091efacb84, type: 2}
     - target: {fileID: 5378884362037275108, guid: 38a8ceb0e6db1af4eb16cf7b0fcef1ee, type: 3}
+      propertyPath: gridSize
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5378884362037275108, guid: 38a8ceb0e6db1af4eb16cf7b0fcef1ee, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}

@@ -36,6 +36,28 @@ namespace Editor
 
         private readonly List<HexCellPreviewObject> _previewObjects = new();
         private Dictionary<string, GameObject> _prefabCache = new();
+        
+        private GUIStyle _previewLabelStyle;
+        private GUIStyle PreviewLabelStyle
+        {
+            get
+            {
+                if (_previewLabelStyle == null)
+                {
+                    _previewLabelStyle = new GUIStyle()
+                    {
+                        fontStyle = FontStyle.Bold,
+                        fontSize = 16,
+                        normal = new GUIStyleState
+                        {
+                            textColor = Color.white,
+                            background = Texture2D.blackTexture
+                        }
+                    };
+                }
+                return _previewLabelStyle;
+            }
+        }
 
         private void OnEnable()
         {
@@ -248,13 +270,11 @@ namespace Editor
 
                 if (meshFilter.sharedMesh == null) continue;
 
-                // Calculate world matrix for this mesh
                 Matrix4x4 matrix = Matrix4x4.TRS(position, rotation, scale) *
                                    Matrix4x4.TRS(meshFilter.transform.localPosition,
                                        meshFilter.transform.localRotation,
                                        meshFilter.transform.localScale);
 
-                // Draw each submesh with its material
                 for (int submesh = 0; submesh < meshFilter.sharedMesh.subMeshCount; submesh++)
                 {
                     if (submesh < meshRenderer.sharedMaterials.Length)
@@ -263,13 +283,18 @@ namespace Editor
                         if (originalMaterial != null)
                         {
                             var previewMaterial = _hexMap.PreviewMaterial;
+                            previewMaterial.mainTexture = originalMaterial.mainTexture;
                             Graphics.DrawMesh(meshFilter.sharedMesh, matrix, previewMaterial, 0, null, submesh);
                         }
                     }
                 }
             }
-            
-            Handles.Label(previewObj.worldPosition, previewObj.label);
+
+            GUIContent labelContent = new GUIContent(previewObj.label);
+            Vector2 textSize = PreviewLabelStyle.CalcSize(labelContent);
+            PreviewLabelStyle.contentOffset = new Vector2(-textSize.x * 0.5f, 0.0f);
+    
+            Handles.Label(previewObj.worldPosition, previewObj.label, PreviewLabelStyle);
         }
     }
 }

@@ -32,7 +32,7 @@ Material:
     m_Colors:
     - _BorderColor: {r: 0.1747063, g: 0.19004907, b: 0.24528301, a: 1}
     - _CellColor: {r: 0.23829655, g: 0.2599754, b: 0.3301887, a: 1}
-    - _HoveredCell: {r: -3, g: -4, b: 0, a: -1}
+    - _HoveredCell: {r: -0, g: 2, b: 0, a: -1}
     - _HoveredColor: {r: 0.44606623, g: 0.4745394, b: 0.5283019, a: 1}
     - _SelectedCell: {r: 0, g: 0, b: -1, a: -1}
     - _SelectedColor: {r: 1, g: 0.6076495, b: 0, a: 1}
