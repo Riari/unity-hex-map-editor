@@ -12,49 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20429611b53206e4590c446de162c1d7, type: 3}
   m_Name: HexagonalMapData
   m_EditorClassIdentifier: 
-  _cellList:
-  - Guid: c011abae4cd50b746a7f7ba567d8a195
-    Name: Hexagon_Crater
-    ContentAsset:
-      m_AssetGUID: c011abae4cd50b746a7f7ba567d8a195
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
-    InstantiatedContent: {fileID: 0}
-  - Guid: c477ce22819239e4f8a603b533e6fd76
-    Name: Hexagon_Beach
-    ContentAsset:
-      m_AssetGUID: c477ce22819239e4f8a603b533e6fd76
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
-    InstantiatedContent: {fileID: 0}
-  - Guid: a83912cdd62c25a49a4d6ba78409c526
-    Name: Hexagon_Ice
-    ContentAsset:
-      m_AssetGUID: a83912cdd62c25a49a4d6ba78409c526
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
-    InstantiatedContent: {fileID: 0}
-  - Guid: 297cc27b106e75149aca2c2e79149650
-    Name: Hexagon_Vulcano
-    ContentAsset:
-      m_AssetGUID: 297cc27b106e75149aca2c2e79149650
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_SubObjectGUID: 
-      m_EditorAssetChanged: 0
-    InstantiatedContent: {fileID: 0}
-  _coordinatesList:
-  - Q: 0
-    R: 0
-  - Q: 0
-    R: 1
-  - Q: 1
-    R: 0
-  - Q: -1
-    R: 1
+  _cellList: []
+  _coordinatesList: []

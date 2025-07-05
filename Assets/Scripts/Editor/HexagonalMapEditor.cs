@@ -277,16 +277,18 @@ namespace Editor
 
                 for (int submesh = 0; submesh < meshFilter.sharedMesh.subMeshCount; submesh++)
                 {
-                    if (submesh < meshRenderer.sharedMaterials.Length)
+                    if (submesh >= meshRenderer.sharedMaterials.Length) continue;
+
+                    var originalMaterial = meshRenderer.sharedMaterials[submesh];
+                    if (originalMaterial == null) continue;
+
+                    var previewMaterial = _hexMap.PreviewMaterial;
+                    if (previewMaterial.mainTexture == null)
                     {
-                        var originalMaterial = meshRenderer.sharedMaterials[submesh];
-                        if (originalMaterial != null)
-                        {
-                            var previewMaterial = _hexMap.PreviewMaterial;
-                            previewMaterial.mainTexture = originalMaterial.mainTexture;
-                            Graphics.DrawMesh(meshFilter.sharedMesh, matrix, previewMaterial, 0, null, submesh);
-                        }
+                        previewMaterial.mainTexture = originalMaterial.mainTexture;
                     }
+
+                    Graphics.DrawMesh(meshFilter.sharedMesh, matrix, previewMaterial, 0, null, submesh);
                 }
             }
 
