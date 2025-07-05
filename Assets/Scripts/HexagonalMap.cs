@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -53,17 +52,29 @@ public class HexCell
 public class HexagonalMap : MonoBehaviour
 {
     [Header("Components")]
-    [SerializeField] private Camera playerCamera;
+    [SerializeField] private FlyingCamera playerCamera;
 
     [Header("Grid Settings")]
     [SerializeField, Range(1, 20)] private int gridSize = 5;
     [SerializeField, Range(0.1f, 2.0f)] private float cellSize = 0.1f;
     
+    [Header("Content Settings")]
+    [SerializeField, Range(0.1f, 1.0f)] private float contentScale = 0.28f;
+    [SerializeField, Range(0, 180)] private int contentYRotation = 30;
+    
+    public float ContentScale => contentScale;
+    public int ContentYRotation => contentYRotation;
+
     [Header("Preview Settings")]
-    [SerializeField] private Color previewColor = new(1f, 1f, 1f, 0.5f);
+    [SerializeField] private Material previewMaterial;
     
-    private Dictionary<HexCoordinates, HexCell> _cellStorage = new();
+    public Material PreviewMaterial => previewMaterial;
     
+    [Header("Data")]
+    [SerializeField] private HexagonalMapData mapData;
+    
+    public HexagonalMapData MapData => mapData;
+
     private const float PlaneExtents = 5.0f;
 
     private Material _gridMaterial;
@@ -71,7 +82,7 @@ public class HexagonalMap : MonoBehaviour
     {
         get
         {
-            if (_gridMaterial) return _gridMaterial;
+            if (_gridMaterial || this == null) return _gridMaterial;
             Renderer gridRenderer = GetComponent<Renderer>();
             if (gridRenderer)
             {
@@ -109,6 +120,40 @@ public class HexagonalMap : MonoBehaviour
     private static readonly int ShaderCellSize = Shader.PropertyToID("_CellSize");
     private static readonly int ShaderHoveredCell = Shader.PropertyToID("_HoveredCell");
     private static readonly int ShaderSelectedCell = Shader.PropertyToID("_SelectedCell");
+
+    void Start()
+    {
+        foreach (var (coords, cell) in mapData.Cells)
+        {
+            Vector3 worldPos = HexToPoint(coords);
+            StartCoroutine(InstantiateContentAsync(cell, worldPos));
+        }
+    }
+    
+    void OnValidate()
+    {
+        UpdateShaderProperties();
+    }
+
+    /// <summary>
+    /// Instantiates a game object at the given position using the given cell's content asset
+    /// </summary>
+    /// <param name="cell">The cell to instantiate the object from</param>
+    /// <param name="position">The position to place the object at</param>
+    /// <returns>IEnumerator</returns>
+    private IEnumerator InstantiateContentAsync(HexCell cell, Vector3 position)
+    {
+        Quaternion contentRotation = Quaternion.AngleAxis(contentYRotation, Vector3.up);
+        var handle = cell.ContentAsset.InstantiateAsync(position, contentRotation);
+        yield return handle;
+        
+        if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+        {
+            handle.Result.transform.position = position;
+            handle.Result.transform.localScale *= contentScale;
+            cell.InstantiatedContent = handle.Result;
+        }
+    }
     
     /// <summary>
     /// Updates the grid and cell size shader properties
@@ -172,25 +217,11 @@ public class HexagonalMap : MonoBehaviour
     /// <param name="asset">A reference to the asset to use for this cell's content</param>
     public void SetCell(HexCoordinates cellCoords, string guid, string displayName, AssetReference asset)
     {
-        if (_cellStorage.TryGetValue(cellCoords, out HexCell existingCell))
+        if (mapData.Cells.TryGetValue(cellCoords, out HexCell existingCell))
         {
             if (existingCell.InstantiatedContent != null)
             {
-                if (Application.isPlaying)
-                {
-                    if (existingCell.ContentAsset != null && existingCell.ContentAsset.RuntimeKeyIsValid())
-                    {
-                        Addressables.ReleaseInstance(existingCell.InstantiatedContent);
-                    }
-                    else
-                    {
-                        Destroy(existingCell.InstantiatedContent);
-                    }
-                }
-                else
-                {
-                    DestroyImmediate(existingCell.InstantiatedContent);
-                }
+                DestroyImmediate(existingCell.InstantiatedContent);
             }
         }
 
@@ -203,97 +234,8 @@ public class HexagonalMap : MonoBehaviour
                 ContentAsset = asset
             };
 
-            var worldPos = HexToPoint(cellCoords);
-
-            if (Application.isPlaying)
-            {
-                StartCoroutine(InstantiateContentAsync(cell, worldPos));
-            }
-            else
-            {
-                // TODO: Implement cell content preview
-            }
-
-            _cellStorage[cellCoords] = cell;
+            mapData.SetCell(cellCoords, cell);
         }
-    }
-    
-    /// <summary>
-    /// Instantiates a game object at the given position using the given cell's content asset
-    /// </summary>
-    /// <param name="cell">The cell to instantiate the object from</param>
-    /// <param name="position">The position to place the object at</param>
-    /// <returns>IEnumerator</returns>
-    private IEnumerator InstantiateContentAsync(HexCell cell, Vector3 position)
-    {
-        var handle = cell.ContentAsset.InstantiateAsync(position, Quaternion.identity, transform);
-        yield return handle;
-        
-        if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
-        {
-            cell.InstantiatedContent = handle.Result;
-        }
-    }
-
-    /// <summary>
-    /// Attempts to retrieve the cell at the given coordinates
-    /// </summary>
-    /// <param name="cellCoords">The coordinates of the cell to retrieve</param>
-    /// <param name="cell">The cell to write to</param>
-    /// <returns>True if successful</returns>
-    public bool TryGetCell(HexCoordinates cellCoords, out HexCell cell)
-    {
-        return _cellStorage.TryGetValue(cellCoords, out cell);
-    }
-
-    /// <summary>
-    /// Deletes content stored at the given cell coordinates
-    /// </summary>
-    /// <param name="coords">The coordinates of the cell to clear</param>
-    public void DeleteCell(HexCoordinates coords)
-    {
-        CleanupCell(_cellStorage[coords]);
-        _cellStorage.Remove(coords);
-    }
-
-    /// <summary>
-    /// Removes instantiated content (if any) from the cell
-    /// </summary>
-    /// <param name="cell">The cell to clear</param>
-    private void CleanupCell(HexCell cell)
-    {
-        if (cell.InstantiatedContent != null)
-        {
-            if (Application.isPlaying)
-            {
-                Destroy(cell.InstantiatedContent);
-            }
-            else
-            {
-                DestroyImmediate(cell.InstantiatedContent);
-            }
-        }
-            
-        cell.ContentAsset = null;
-        cell.InstantiatedContent = null;
-    }
-
-    /// <summary>
-    /// Clears the contents of all cells
-    /// </summary>
-    public void ClearAllCells()
-    {
-        foreach (var (_, cell) in _cellStorage)
-        {
-            CleanupCell(cell);
-        }
-        
-        _cellStorage.Clear();
-    }
-    
-    void OnValidate()
-    {
-        UpdateShaderProperties();
     }
 
     /// <summary>
@@ -364,14 +306,14 @@ public class HexagonalMap : MonoBehaviour
     public Vector3 HexToPoint(HexCoordinates hexCoordinates)
     {
         float x = 3.0f / 2.0f * hexCoordinates.Q;
-        float z = Mathf.Sqrt(3.0f) / 2.0f + Mathf.Sqrt(3.0f) * hexCoordinates.R;
-        x *= cellSize;
-        z *= cellSize;
+        float z = Mathf.Sqrt(3.0f) / 2.0f * hexCoordinates.Q + Mathf.Sqrt(3.0f) * hexCoordinates.R;
+        x *= (transform.localScale.x / 2.0f);
+        z *= (transform.localScale.z / 2.0f);
 
         Vector3 point;
-        point.x = x;
+        point.x = -x;
         point.y = transform.position.y;
-        point.z = z;
+        point.z = -z;
 
         return point;
     }

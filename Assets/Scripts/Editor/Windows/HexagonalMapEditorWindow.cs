@@ -75,7 +75,6 @@ namespace Editor.Windows
         private void OnDisable()
         {
             Selection.selectionChanged -= OnSelectionChanged;
-            
             _selectedMapEditor = null;
         }
     
