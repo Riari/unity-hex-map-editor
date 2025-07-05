@@ -7,7 +7,6 @@ using UnityEngine.AddressableAssets;
 [Serializable]
 public struct HexCoordinates : IEquatable<HexCoordinates>
 {
-
     public float Q;
     public float R;
 
@@ -48,9 +47,6 @@ public class HexCell
     public string Name;
     public AssetReference ContentAsset;
     public GameObject InstantiatedContent;
-    public bool ShowPreview = true;
-    
-    public bool HasContent => ContentAsset != null && ContentAsset.RuntimeKeyIsValid();
 }
 
 public class HexagonalMap : MonoBehaviour
@@ -113,6 +109,9 @@ public class HexagonalMap : MonoBehaviour
     private static readonly int ShaderHoveredCell = Shader.PropertyToID("_HoveredCell");
     private static readonly int ShaderSelectedCell = Shader.PropertyToID("_SelectedCell");
     
+    /// <summary>
+    /// Updates the grid and cell size shader properties
+    /// </summary>
     private void UpdateShaderProperties()
     {
         if (GridMaterial == null) return;
@@ -121,6 +120,10 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetFloat(ShaderCellSize, cellSize);
     }
 
+    /// <summary>
+    /// Sets the hovered cell coordinates in the shader
+    /// </summary>
+    /// <param name="cellCoords">The cell coordinates</param>
     public void SetHoveredCell(HexCoordinates cellCoords)
     {
         if (!GridMaterial) return;
@@ -128,6 +131,9 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderHoveredCell, new Vector4(cellCoords.Q, cellCoords.R, 0, -1));
     }
 
+    /// <summary>
+    /// Disables the hovered cell coordinates in the shader
+    /// </summary>
     public void ClearHoveredCell()
     {
         if (!GridMaterial) return;
@@ -135,6 +141,10 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderHoveredCell, new Vector4(0, 0, -1, -1));
     }
 
+    /// <summary>
+    /// Sets the selected cell coordinates in the shader
+    /// </summary>
+    /// <param name="cellCoords">The cell coordinates</param>
     public void SetSelectedCell(HexCoordinates cellCoords)
     {
         if (!GridMaterial) return;
@@ -142,6 +152,9 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderSelectedCell, new Vector4(cellCoords.Q, cellCoords.R, 0, -1));
     }
 
+    /// <summary>
+    /// Disables the selected cell coordinates in the shader
+    /// </summary>
     public void ClearSelectedCell()
     {
         if (!GridMaterial) return;
@@ -149,6 +162,12 @@ public class HexagonalMap : MonoBehaviour
         GridMaterial.SetVector(ShaderSelectedCell, new Vector4(0, 0, -1, -1));
     }
 
+    /// <summary>
+    /// Stores a cell
+    /// </summary>
+    /// <param name="cellCoords">The coordinates to store the cell in</param>
+    /// <param name="displayName">A display name to use for this cell</param>
+    /// <param name="asset">A reference to the asset to use for this cell</param>
     public void SetCellContent(HexCoordinates cellCoords, string displayName, AssetReference asset)
     {
         if (_cellStorage.TryGetValue(cellCoords, out HexCell existingCell))
@@ -196,6 +215,12 @@ public class HexagonalMap : MonoBehaviour
         }
     }
     
+    /// <summary>
+    /// Instantiates a game object at the given position using the given cell's content asset
+    /// </summary>
+    /// <param name="cell">The cell to instantiate the object from</param>
+    /// <param name="position">The position to place the object at</param>
+    /// <returns>IEnumerator</returns>
     private IEnumerator InstantiateContentAsync(HexCell cell, Vector3 position)
     {
         var handle = cell.ContentAsset.InstantiateAsync(position, Quaternion.identity, transform);
@@ -207,16 +232,30 @@ public class HexagonalMap : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Attempts to retrieve the cell at the given coordinates
+    /// </summary>
+    /// <param name="cellCoords">The coordinates of the cell to retrieve</param>
+    /// <param name="cell">The cell to write to</param>
+    /// <returns>True if successful</returns>
     public bool TryGetCell(HexCoordinates cellCoords, out HexCell cell)
     {
         return _cellStorage.TryGetValue(cellCoords, out cell);
     }
 
+    /// <summary>
+    /// Clears the content of the cell at the given position
+    /// </summary>
+    /// <param name="coords">The coordinates of the cell to clear</param>
     public void ClearCell(HexCoordinates coords)
     {
         ClearCell(_cellStorage[coords]);
     }
 
+    /// <summary>
+    /// Clears the content of the given cell
+    /// </summary>
+    /// <param name="cell">The cell to clear</param>
     public void ClearCell(HexCell cell)
     {
         if (cell.InstantiatedContent != null)
@@ -235,6 +274,9 @@ public class HexagonalMap : MonoBehaviour
         cell.InstantiatedContent = null;
     }
 
+    /// <summary>
+    /// Clears the contents of all cells
+    /// </summary>
     public void ClearAllCells()
     {
         foreach (var (_, cell) in _cellStorage)
@@ -250,6 +292,11 @@ public class HexagonalMap : MonoBehaviour
         UpdateShaderProperties();
     }
 
+    /// <summary>
+    /// Rounds fractional coordinates to the hexagon grid
+    /// </summary>
+    /// <param name="hexCoordinates">The fractional coordinates</param>
+    /// <returns>The rounded coordinates</returns>
     private HexCoordinates AxialRound(HexCoordinates hexCoordinates)
     {
         float xGrid = Mathf.Round(hexCoordinates.Q);
@@ -270,12 +317,17 @@ public class HexagonalMap : MonoBehaviour
     /// Normalizes local space coordinates to plane coordinates
     /// </summary>
     /// <param name="value">Value on a local space axis</param>
-    /// <returns>The normalized plane coordinate value (between -1.0f and 1.0f)</returns>
+    /// <returns>The normalized plane coordinates (between -1.0f and 1.0f)</returns>
     private float NormalizeAxisValue(float value)
     {
         return (Mathf.InverseLerp(-PlaneExtents, PlaneExtents, value) * 2.0f) - 1.0f;
     }
 
+    /// <summary>
+    /// Converts a world-space position to normalized 2D coordinates on the plane
+    /// </summary>
+    /// <param name="point">The world-space position</param>
+    /// <returns>The normalized plane coordinates (between -1.0f and 1.0f)</returns>
     private Vector2 PointToNormalizedPlaneCoordinates(Vector3 point)
     {
         Vector2 result;
@@ -284,6 +336,11 @@ public class HexagonalMap : MonoBehaviour
         return result;
     }
 
+    /// <summary>
+    /// Converts a world-space position to hex coordinates
+    /// </summary>
+    /// <param name="point">The world-space position</param>
+    /// <returns>The hex coordinates (Q, R)</returns>
     public HexCoordinates PointToHex(Vector3 point)
     {
         Vector2 normalizedCoordinates = PointToNormalizedPlaneCoordinates(point);
@@ -295,6 +352,11 @@ public class HexagonalMap : MonoBehaviour
         return AxialRound(hexCoordinates);
     }
 
+    /// <summary>
+    /// Converts hex coordinates to a world-space position (the centre point of the cell)
+    /// </summary>
+    /// <param name="hexCoordinates">The hex coordinates to convert</param>
+    /// <returns>The world-space position of the cell</returns>
     public Vector3 HexToPoint(HexCoordinates hexCoordinates)
     {
         float x = 3.0f / 2.0f * hexCoordinates.Q;
