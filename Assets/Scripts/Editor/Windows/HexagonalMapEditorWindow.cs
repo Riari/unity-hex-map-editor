@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor;
@@ -7,6 +8,40 @@ using UnityEngine.AddressableAssets;
 #if UNITY_EDITOR
 namespace Editor.Windows
 {
+    public struct PrefabEntry : IEquatable<PrefabEntry>
+    {
+        public string Guid;
+        public string DisplayName;
+        public string AssetPath;
+        public GameObject Prefab;
+        public AssetReference AssetReference;
+
+        public static bool operator ==(PrefabEntry left, PrefabEntry right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(PrefabEntry left, PrefabEntry right)
+        {
+            return !(left == right);
+        }
+
+        public bool Equals(PrefabEntry other)
+        {
+            return Guid == other.Guid;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is PrefabEntry other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            return (Guid != null ? Guid.GetHashCode() : 0);
+        }
+    }
+
     public class HexagonalMapEditorWindow : EditorWindow
     {
         [MenuItem("Window/Hex Map Editor")]
@@ -19,25 +54,22 @@ namespace Editor.Windows
     
         private HexagonalMapEditor _selectedMapEditor;
         private Vector2 _scrollPosition;
-        private List<PrefabEntry> _prefabEntries = new List<PrefabEntry>();
-        private readonly Dictionary<string, Texture2D> _thumbnailCache = new Dictionary<string, Texture2D>();
-        private string _assetGroup = "HexagonalTiles";
-        private PrefabEntry _selectedPrefab;
-    
-        private struct PrefabEntry
+        private List<PrefabEntry> _prefabEntries = new();
+        private readonly Dictionary<string, Texture2D> _thumbnailCache = new();
+        private string _addressableGroup = "HexagonalTiles";
+        private readonly PrefabEntry _emptyEntry = new()
         {
-            public string Address;
-            public string DisplayName;
-            public string AssetPath;
-            public string Guid;
-            public GameObject Prefab;
-            public AssetReference AssetReference;
-        }
+            Guid = "Empty",
+            DisplayName = "(Empty)",
+            AssetPath = ""
+        };
+        private PrefabEntry _selectedPrefab;
     
         private void OnEnable()
         {
             Selection.selectionChanged += OnSelectionChanged;
             RefreshPrefabList();
+            wantsMouseMove = true;
         }
     
         private void OnDisable()
@@ -72,7 +104,6 @@ namespace Editor.Windows
                 }
             
                 Repaint();
-
             }
         }
     
@@ -89,13 +120,27 @@ namespace Editor.Windows
                 var coords = _selectedMapEditor.SelectedCell.Value;
                 EditorGUILayout.LabelField($"Selected Cell: ({coords.Q}, {coords.R})");
 
-                EditorGUILayout.LabelField(_selectedMapEditor.TryGetCell(coords, out HexCell cell)
-                    ? $"Content: {cell.Name}"
-                    : "Content: Empty");
+                bool hasContent = _selectedMapEditor.TryGetCell(coords, out HexCell cell);
+                EditorGUILayout.LabelField(hasContent ? $"Content: {cell.Name}" : "Content: Empty");
+
+                if (hasContent)
+                {
+                    foreach (var entry in _prefabEntries)
+                    {
+                        if (cell.Guid == entry.Guid)
+                        {
+                            _selectedPrefab = entry;
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    _selectedPrefab = _emptyEntry;
+                }
                 
                 DrawPrefabFilters();
                 DrawPrefabList();
-                DrawSelectedCellInfo();
             }
             else
             {
@@ -103,6 +148,11 @@ namespace Editor.Windows
             }
         
             EditorGUILayout.Space();
+
+            if (Event.current.type == EventType.MouseMove)
+            {
+                Repaint();
+            }
         }
 
         public void OnCellSelectionChanged()
@@ -115,7 +165,7 @@ namespace Editor.Windows
             EditorGUILayout.LabelField("Prefab Library", EditorStyles.boldLabel);
         
             EditorGUI.BeginChangeCheck();
-            _assetGroup = EditorGUILayout.TextField("Filter Label", _assetGroup);
+            _addressableGroup = EditorGUILayout.TextField("Addressable Group", _addressableGroup);
             if (EditorGUI.EndChangeCheck())
             {
                 RefreshPrefabList();
@@ -131,20 +181,8 @@ namespace Editor.Windows
     
         private void DrawPrefabList()
         {
-            EditorGUILayout.LabelField("Available Prefabs", EditorStyles.boldLabel);
-        
-            if (GUILayout.Button("Clear Selection"))
-            {
-                _selectedPrefab = default;
-                if (_selectedMapEditor != null && _selectedMapEditor.SelectedCell.HasValue)
-                {
-                    _selectedMapEditor.ClearCellContent(_selectedMapEditor.SelectedCell.Value);
-                }
-            }
-        
             EditorGUILayout.Space();
-        
-            // Scrollable prefab list
+
             _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition);
         
             foreach (var entry in _prefabEntries)
@@ -152,10 +190,16 @@ namespace Editor.Windows
                 if (!DrawPrefabEntry(entry)) continue;
                 _selectedPrefab = entry;
                 
-                // If we have a selected cell, assign immediately
                 if (_selectedMapEditor != null && _selectedMapEditor.SelectedCell.HasValue)
                 {
-                    _selectedMapEditor.SetCellContent(_selectedMapEditor.SelectedCell.Value, entry.DisplayName, entry.AssetReference);
+                    if (entry == _emptyEntry)
+                    {
+                        _selectedMapEditor.DeleteCell(_selectedMapEditor.SelectedCell.Value);
+                    }
+                    else
+                    {
+                        _selectedMapEditor.SetCell(_selectedMapEditor.SelectedCell.Value, entry);
+                    }
                 }
             }
         
@@ -199,43 +243,22 @@ namespace Editor.Windows
             style.fontSize = 9;
             style.fontStyle = FontStyle.Normal;
             style.normal.textColor = Color.gray;
+            style.hover.textColor = Color.gray;
             GUI.Label(pathRect, entry.AssetPath, style);
         
             return Event.current.type == EventType.MouseDown && rect.Contains(Event.current.mousePosition);
         }
     
-        private void DrawSelectedCellInfo()
-        {
-            if (_selectedMapEditor == null || !_selectedMapEditor.SelectedCell.HasValue)
-                return;
-        
-            EditorGUILayout.Space();
-            EditorGUILayout.LabelField("Selected Cell Actions", EditorStyles.boldLabel);
-        
-            var coords = _selectedMapEditor.SelectedCell.Value;
-        
-            if (GUILayout.Button("Clear Cell"))
-            {
-                _selectedMapEditor.ClearCellContent(coords);
-            }
-        
-            if (_selectedPrefab.Prefab != null)
-            {
-                if (GUILayout.Button($"Place: {_selectedPrefab.DisplayName}"))
-                {
-                    _selectedMapEditor.SetCellContent(coords, _selectedPrefab.DisplayName, _selectedPrefab.AssetReference);
-                }
-            }
-        }
-    
         private void RefreshPrefabList()
         {
             _prefabEntries.Clear();
+            
+            _prefabEntries.Add(_emptyEntry);
         
             var settings = UnityEditor.AddressableAssets.AddressableAssetSettingsDefaultObject.Settings;
             if (settings != null)
             {
-                var group = settings.groups.Find(group => group.Name == _assetGroup);
+                var group = settings.groups.Find(group => group.Name == _addressableGroup);
                 foreach (var entry in group.entries)
                 {
                     if (entry == null) continue;
@@ -246,10 +269,9 @@ namespace Editor.Windows
                     var assetRef = new AssetReference(entry.guid);
                     _prefabEntries.Add(new PrefabEntry
                     {
-                        Address = entry.address,
+                        Guid = entry.guid,
                         DisplayName = System.IO.Path.GetFileNameWithoutExtension(entry.AssetPath),
                         AssetPath = entry.AssetPath,
-                        Guid = entry.guid,
                         Prefab = asset,
                         AssetReference = assetRef
                     });

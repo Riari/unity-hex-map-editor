@@ -133,14 +133,16 @@ namespace Editor
             return _hexMap.TryGetCell(coords, out cell);
         }
 
-        public void SetCellContent(HexCoordinates cell, string displayName, AssetReference asset)
+        public void SetCell(HexCoordinates coords, PrefabEntry prefab)
         {
-            _hexMap.SetCellContent(cell, displayName, asset);
+            _hexMap.SetCell(coords, prefab.Guid, prefab.DisplayName, prefab.AssetReference);
+            Repaint();
         }
 
-        public void ClearCellContent(HexCoordinates cell)
+        public void DeleteCell(HexCoordinates coords)
         {
-            _hexMap.ClearCell(cell);
+            _hexMap.DeleteCell(coords);
+            Repaint();
         }
     }
 }

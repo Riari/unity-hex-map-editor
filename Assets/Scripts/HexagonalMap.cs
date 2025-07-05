@@ -44,6 +44,7 @@ public struct HexCoordinates : IEquatable<HexCoordinates>
 [Serializable]
 public class HexCell
 {
+    public string Guid;
     public string Name;
     public AssetReference ContentAsset;
     public GameObject InstantiatedContent;
@@ -163,12 +164,13 @@ public class HexagonalMap : MonoBehaviour
     }
 
     /// <summary>
-    /// Stores a cell
+    /// Writes content to a cell
     /// </summary>
-    /// <param name="cellCoords">The coordinates to store the cell in</param>
-    /// <param name="displayName">A display name to use for this cell</param>
-    /// <param name="asset">A reference to the asset to use for this cell</param>
-    public void SetCellContent(HexCoordinates cellCoords, string displayName, AssetReference asset)
+    /// <param name="cellCoords">The coordinates of the cell to write content to</param>
+    /// <param name="guid">A unique identifier for this cell's content</param>
+    /// <param name="displayName">A display name to use for this cell's content</param>
+    /// <param name="asset">A reference to the asset to use for this cell's content</param>
+    public void SetCell(HexCoordinates cellCoords, string guid, string displayName, AssetReference asset)
     {
         if (_cellStorage.TryGetValue(cellCoords, out HexCell existingCell))
         {
@@ -196,6 +198,7 @@ public class HexagonalMap : MonoBehaviour
         {
             HexCell cell = new HexCell
             {
+                Guid = guid,
                 Name = displayName,
                 ContentAsset = asset
             };
@@ -244,19 +247,20 @@ public class HexagonalMap : MonoBehaviour
     }
 
     /// <summary>
-    /// Clears the content of the cell at the given position
+    /// Deletes content stored at the given cell coordinates
     /// </summary>
     /// <param name="coords">The coordinates of the cell to clear</param>
-    public void ClearCell(HexCoordinates coords)
+    public void DeleteCell(HexCoordinates coords)
     {
-        ClearCell(_cellStorage[coords]);
+        CleanupCell(_cellStorage[coords]);
+        _cellStorage.Remove(coords);
     }
 
     /// <summary>
-    /// Clears the content of the given cell
+    /// Removes instantiated content (if any) from the cell
     /// </summary>
     /// <param name="cell">The cell to clear</param>
-    public void ClearCell(HexCell cell)
+    private void CleanupCell(HexCell cell)
     {
         if (cell.InstantiatedContent != null)
         {
@@ -281,7 +285,7 @@ public class HexagonalMap : MonoBehaviour
     {
         foreach (var (_, cell) in _cellStorage)
         {
-            ClearCell(cell);
+            CleanupCell(cell);
         }
         
         _cellStorage.Clear();
