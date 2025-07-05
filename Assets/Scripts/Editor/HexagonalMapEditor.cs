@@ -22,6 +22,7 @@ namespace Editor
     
         private void OnDisable()
         {
+            _hexMap.ClearSelectedCell();
             SceneView.duringSceneGui -= OnSceneGUI;
         }
         
